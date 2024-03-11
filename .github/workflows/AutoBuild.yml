@@ -49,11 +49,11 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           file: ./Dockerfile
-          platforms: linux/arm64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
-            dalamudx/singbox-ospf:${{ steps.set-version.outputs.version }}
-            dalamudx/singbox-ospf:latest
+            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
+            dalamudx/sing-box-ospf:latest
           build-args: |
             VERSION=${{ steps.set-version.outputs.version }}
 
@@ -63,11 +63,11 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           file: ./Dockerfile
-          platforms: linux/arm64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
-            dalamudx/singbox-ospf:${{ steps.set-version.outputs.pre_version }}
-            dalamudx/singbox-ospf:dev
+            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.pre_version }}
+            dalamudx/sing-box-ospf:dev
           build-args: |
             VERSION=${{ steps.set-version.outputs.pre_version }}
   del_runs:

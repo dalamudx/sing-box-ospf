@@ -1,4 +1,4 @@
 [submodule "yacd"]
-	path = submodules/Yacd-meta
+	path = Yacd-meta
 	url = https://github.com/MetaCubeX/Yacd-meta.git
 	branch = master
