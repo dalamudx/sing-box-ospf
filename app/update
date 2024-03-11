@@ -1,0 +1,4 @@
+#!/bin/sh
+curl -Lo /app/routes4.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
+curl -Lo /app/routes6.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
+birdc configure

@@ -1,0 +1,166 @@
+{
+  "dns": {
+    "rules": [
+      {
+        "clash_mode": "global",
+        "server": "remote"
+      },
+      {
+        "clash_mode": "direct",
+        "server": "local"
+      },
+      {
+        "outbound": [
+          "any"
+        ],
+        "server": "local"
+      }
+    ],
+    "servers": [
+      {
+        "address": "https://1.1.1.1/dns-query",
+        "detour": "proxy",
+        "tag": "remote"
+      },
+      {
+        "address": "https://223.5.5.5/dns-query",
+        "detour": "direct",
+        "tag": "local"
+      }
+    ]
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "inet4_address": "172.19.0.1/30",
+      "inet6_address": "fd10::1/126",
+      "auto_route": true,
+      "strict_route": true,
+      "endpoint_independent_nat": true,
+      "mtu": 9000,
+      "sniff": true,
+      "sniff_override_destination": true
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "type": "direct"
+    },
+    {
+      "tag": "block",
+      "type": "block"
+    },
+    {
+      "tag": "dns-out",
+      "type": "dns"
+    },
+    {
+      "tag": "proxy",
+      "type": "selector",
+      "default": "auto",
+      "outbounds": [
+        "auto",
+        "rl-jp3",
+        "hy-jp3"
+      ]
+    },
+    {
+      "tag": "auto",
+      "type": "urltest",
+      "url": "http://www.gstatic.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50,
+      "outbounds": [
+        "rl-jp3",
+        "hy-jp3"
+      ]
+    },
+    {
+      "type": "vless",
+      "tag": "rl-jp3",
+      "uuid": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "server": "x.x.x.x",
+      "server_port": 443,
+      "tls": {
+        "enabled": true,
+        "server_name": "www.lovelive-anime.jp",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "short_id": "b2c86d3685d237f3"
+        }
+      },
+      "multiplex": {
+        "enabled": true,
+        "protocol": "h2mux",
+        "max_connections": 1,
+        "min_streams": 4,
+        "padding": true,
+        "brutal": {
+          "enabled": true,
+          "up_mbps": 500,
+          "down_mbps": 1000
+        }
+      }
+    },
+    {
+      "type": "hysteria2",
+      "server": "x.x.x.x",
+      "server_port": 65505,
+      "tag": "hy-jp3",
+      "password": "Passwd",
+      "tls": {
+        "enabled": true,
+        "server_name": "bing.com",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      }
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "final": "proxy",
+    "rules": [
+      {
+        "outbound": "dns-out",
+        "protocol": "dns"
+      },
+      {
+        "clash_mode": "direct",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "global",
+        "outbound": "proxy"
+      }
+    ]
+  },
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "external_ui": "/app/static/",
+      "external_ui_download_detour": "",
+      "external_ui_download_url": "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "./cache.db",
+      "cache_id": "hysteria_profile",
+      "store_fakeip": true
+    }
+  }
+}
