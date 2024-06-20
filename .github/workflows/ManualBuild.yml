@@ -3,44 +3,14 @@ name: Manual Build Docker Image
 on:
   workflow_dispatch:
     inputs:
-      days:
-        description: 'Days-worth of runs to keep for each workflow'
+      version:
+        description: 'specific release version number'
         required: true
-        default: '30'
-      minimum_runs:
-        description: 'Minimum runs to keep for each workflow'
+        default: ' '
+      pre_version:
+        description: 'specific pre-release version number'
         required: true
-        default: '6'
-      delete_workflow_pattern:
-        description: 'Name or filename of the workflow (if not set, all workflows are targeted)'
-        required: false
-      delete_workflow_by_state_pattern:
-        description: 'Filter workflows by state: active, deleted, disabled_fork, disabled_inactivity, disabled_manually'
-        required: true
-        default: "ALL"
-        type: choice
-        options:
-          - "ALL"
-          - active
-          - deleted
-          - disabled_inactivity
-          - disabled_manually
-      delete_run_by_conclusion_pattern:
-        description: 'Remove runs based on conclusion: action_required, cancelled, failure, skipped, success'
-        required: true
-        default: "ALL"
-        type: choice
-        options:
-          - "ALL"
-          - "Unsuccessful: action_required,cancelled,failure,skipped"
-          - action_required
-          - cancelled
-          - failure
-          - skipped
-          - success
-      dry_run:
-        description: 'Logs simulated changes, no deletions are performed'
-        required: false
+        default: ' '
   push:
     paths:
       - 'Dockerfile'
@@ -69,15 +39,21 @@ jobs:
       - name: Set Version
         id: set-version
         run: |
-          echo "::set-output name=version::$(cat ReleaseTag | head -n1)"
-          echo "::set-output name=pre_version::$(cat PreReleaseTag | head -n1)"
-          echo "ReleaseTag=$(cat ReleaseTag | head -n1)"
-          echo "PreReleaseTag=$(cat PreReleaseTag | head -n1)"
-          echo "::set-output name=status::success"
+          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w ${{ github.event.inputs.version }} )
+          if [ "$ReleaseTag" != "" ];then
+            echo "::set-output name=version::${{ github.event.inputs.version }}"
+            echo "::set-output name=status::success"
+          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w ${{ github.event.inputs.pre_version }} ))
+          if [ "$PreReleaseTag" != "" ];then
+            echo "::set-output name=pre_version::${{ github.event.inputs.pre_version }}"
+            echo "::set-output name=pstatus::success"
+          echo "ReleaseTag=$ReleaseTag"
+          echo "PreReleaseTag=$PreReleaseTag"
           
 
       # Build and push latest_release
       - name: Build dockerfile
+        if: steps.set-version.outputs.status == 'success'
         uses: docker/build-push-action@v4
         with:
           file: ./Dockerfile
@@ -91,6 +67,7 @@ jobs:
 
       # Build and push latest_prerelease
       - name: Build PreRelease dockerfile
+        if: steps.set-version.outputs.pstatus == 'success'
         uses: docker/build-push-action@v4
         with:
           file: ./Dockerfile
@@ -112,14 +89,5 @@ jobs:
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: ${{ github.event.inputs.days }}
-          keep_minimum_runs: ${{ github.event.inputs.minimum_runs }}
-          delete_workflow_pattern: ${{ github.event.inputs.delete_workflow_pattern }}
-          delete_workflow_by_state_pattern: ${{ github.event.inputs.delete_workflow_by_state_pattern }}
-          delete_run_by_conclusion_pattern: >-
-            ${{
-              startsWith(github.event.inputs.delete_run_by_conclusion_pattern, 'Unsuccessful:')
-              && 'action_required,cancelled,failure,skipped'
-              || github.event.inputs.delete_run_by_conclusion_pattern
-            }}
-          dry_run: ${{ github.event.inputs.dry_run }}
+          retain_days: 0
+          keep_minimum_runs: 6
