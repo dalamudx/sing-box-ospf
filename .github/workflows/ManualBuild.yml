@@ -39,11 +39,11 @@ jobs:
       - name: Set Version
         id: set-version
         run: |
-          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w ${{ github.event.inputs.version }} )
+          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w "${{ github.event.inputs.version }}" )
           if [ "$ReleaseTag" != "" ];then
             echo "::set-output name=version::${{ github.event.inputs.version }}"
             echo "::set-output name=status::success"
-          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w ${{ github.event.inputs.pre_version }} ))
+          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w "${{ github.event.inputs.pre_version }}" ))
           if [ "$PreReleaseTag" != "" ];then
             echo "::set-output name=pre_version::${{ github.event.inputs.pre_version }}"
             echo "::set-output name=pstatus::success"
