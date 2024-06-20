@@ -37,11 +37,10 @@ jobs:
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
         id: set-version
         run: |
-          echo "::set-output name=version::${{ steps.up-version.outputs.release_version }}"
-          echo "::set-output name=pre_version::${{ steps.up-version.outputs.prerelease_version }}"
-          echo "ReleaseTag=${{ steps.up-version.outputs.release_version }}"
+          echo "version=${{ steps.up-version.outputs.release_version }}" >> $GITHUB_OUTPUT
+          echo "pre_version=${{ steps.up-version.outputs.prerelease_version }}" >> $GITHUB_OUTPUT
+          echo "ReleaseTag=${{ steps.up-version.outputs.release_version }}" 
           echo "PreReleaseTag=${{ steps.up-version.outputs.prerelease_version }}"
-          echo "::set-output name=status::success"
           
       # Build and push latest_release
       - name: Build dockerfile
