@@ -4,13 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'specific release version number'
+        description: 'specific version number'
         required: true
         default: 'v1.9.2'
-      pre_version:
-        description: 'specific pre-release version number'
-        required: true
-        default: 'v1.10.0-alpha.13'
   push:
     paths:
       - 'Dockerfile'
@@ -45,9 +41,9 @@ jobs:
             echo "ReleaseTag=$ReleaseTag"
             echo "::set-output name=status::success"
           fi
-          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.pre_version }}' )
+          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' )
           if [ "$PreReleaseTag" != "" ];then
-            echo "::set-output name=pre_version::${{ github.event.inputs.pre_version }}"
+            echo "::set-output name=pre_version::${{ github.event.inputs.version }}"
             echo "PreReleaseTag=$PreReleaseTag"
             echo "::set-output name=pstatus::success"
           fi
@@ -74,7 +70,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.pre_version }}
+            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
           build-args: |
             VERSION=${{ steps.set-version.outputs.pre_version }}
 
