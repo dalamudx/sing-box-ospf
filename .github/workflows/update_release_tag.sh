@@ -26,15 +26,15 @@ echo "在线 Prerelease 版本号: ${PRERELEASE_TAG}"
 if [ "${DockerReleaseTag}" == "null" ]
 then
    # 设置输出变量以便在后续步骤中使用
-   echo "::set-output name=release_version::${RELEASE_TAG}"
-   echo "::set-output name=status::success"
+   echo "release_version=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+   echo "status=success" >> $GITHUB_OUTPUT
 fi
 
 # 检查DockerHub版本号和在线版本号是否不同，如果有任何一个版本号不同，则触发更新动作
 if [ "${DockerPrereleaseTag}" == "null" ]
 then
    # 设置输出变量以便在后续步骤中使用
-   echo "::set-output name=prerelease_version::${PRERELEASE_TAG}"
-   echo "::set-output name=pstatus::success"
+   echo "prerelease_version=${PRERELEASE_TAG}" >> $GITHUB_OUTPUT
+   echo "pstatus=success" >> $GITHUB_OUTPUT
 fi
 
