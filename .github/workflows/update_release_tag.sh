@@ -13,17 +13,17 @@ PRERELEASE_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases
 OnlineReleaseTag=${RELEASE_TAG}
 OnlinePrereleaseTag=${PRERELEASE_TAG}
 
-# 从 releasetag 文件中提取本地的版本号
-LocalReleaseTag=$(cat ReleaseTag | head -n1)
-LocalPrereleaseTag=$(cat PreReleaseTag | head -n1)
+# 从 DockerHub 中提取版本号
+DockerReleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlineReleaseTag} | jq '.digest')
+DockerPrereleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlinePrereleaseTag} | jq '.digest')
 
-echo "本地 Release 版本号: ${LocalReleaseTag}"
-echo "本地 Prerelease 版本号: ${LocalPrereleaseTag}"
+echo "DockerHub Release 版本号: ${DockerReleaseTag}"
+echo "DockerHub Prerelease 版本号: ${DockerPrereleaseTag}"
 echo "在线 Release 版本号: ${RELEASE_TAG}"
 echo "在线 Prerelease 版本号: ${PRERELEASE_TAG}"
 
-# 检查本地版本号和在线版本号是否不同，如果有任何一个版本号不同，则触发更新动作
-if [ "${LocalReleaseTag}" != "${OnlineReleaseTag}" ]
+# 检查DockerHub版本号和在线版本号是否不同，如果有任何一个版本号不同，则触发更新动作
+if [ "${DockerReleaseTag}" != "null" ]
 then
    # 设置输出变量以便在后续步骤中使用
    echo "::set-output name=release_version::${RELEASE_TAG}"
@@ -33,8 +33,8 @@ then
    echo "::set-output name=status::success"
 fi
 
-# 检查本地版本号和在线版本号是否不同，如果有任何一个版本号不同，则触发更新动作
-if [ "${LocalPrereleaseTag}" != "${OnlinePrereleaseTag}" ]
+# 检查DockerHub版本号和在线版本号是否不同，如果有任何一个版本号不同，则触发更新动作
+if [ "${DockerPrereleaseTag}" != "null" ]
 then
    # 设置输出变量以便在后续步骤中使用
    echo "::set-output name=prerelease_version::${PRERELEASE_TAG}"
