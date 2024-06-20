@@ -43,7 +43,7 @@ jobs:
           fi
           PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
           if [ "$PreReleaseTag" != "false" ];then
-            echo "pre_version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "PreReleaseTag=$PreReleaseTag"
             echo "pstatus=success" >> $GITHUB_OUTPUT
           fi
