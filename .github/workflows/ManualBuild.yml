@@ -45,12 +45,12 @@ jobs:
           if [ "$PreReleaseTag" != "" ];then
             echo "::set-output name=pre_version::${{ github.event.inputs.version }}"
             echo "PreReleaseTag=$PreReleaseTag"
-            echo "::set-output name=pstatus::success"
+            echo "::set-output name=status::success"
           fi
 
       # Build and push release
       - name: Build dockerfile
-        if: steps.set-version.outputs.status == 'success'
+        if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.pstatus == 'success') }}
         uses: docker/build-push-action@v4
         with:
           file: ./Dockerfile
@@ -60,19 +60,6 @@ jobs:
             dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
           build-args: |
             VERSION=${{ steps.set-version.outputs.version }}
-
-      # Build and push prerelease
-      - name: Build PreRelease dockerfile
-        if: steps.set-version.outputs.pstatus == 'success'
-        uses: docker/build-push-action@v4
-        with:
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
-          build-args: |
-            VERSION=${{ steps.set-version.outputs.pre_version }}
 
   del_runs:
     runs-on: ubuntu-latest
