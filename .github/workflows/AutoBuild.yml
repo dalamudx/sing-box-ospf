@@ -37,10 +37,10 @@ jobs:
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
         id: set-version
         run: |
-          echo "::set-output name=version::$(cat ReleaseTag | head -n1)"
-          echo "::set-output name=pre_version::$(cat PreReleaseTag | head -n1)"
-          echo "ReleaseTag=$(cat ReleaseTag | head -n1)"
-          echo "PreReleaseTag=$(cat PreReleaseTag | head -n1)"
+          echo "::set-output name=version::${{ steps.up-version.outputs.release_version }}"
+          echo "::set-output name=pre_version::${{ steps.up-version.outputs.prerelease_version }}"
+          echo "ReleaseTag=${{ steps.up-version.outputs.release_version }}"
+          echo "PreReleaseTag=${{ steps.up-version.outputs.prerelease_version }}"
           echo "::set-output name=status::success"
           
       # Build and push latest_release
