@@ -14,8 +14,8 @@ OnlineReleaseTag=${RELEASE_TAG}
 OnlinePrereleaseTag=${PRERELEASE_TAG}
 
 # 从 DockerHub 中提取版本号
-DockerReleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlineReleaseTag} | jq '.digest')
-DockerPrereleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlinePrereleaseTag} | jq '.digest')
+DockerReleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlineReleaseTag} | jq '.name')
+DockerPrereleaseTag=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${OnlinePrereleaseTag} | jq '.name')
 
 echo "DockerHub Release 版本号: ${DockerReleaseTag}"
 echo "DockerHub Prerelease 版本号: ${DockerPrereleaseTag}"
