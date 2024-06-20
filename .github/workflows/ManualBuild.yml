@@ -37,15 +37,15 @@ jobs:
         run: |
           ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w '${{ github.event.inputs.version }}' )
           if [ "$ReleaseTag" != "" ];then
-            echo "::set-output name=version::${{ github.event.inputs.version }}"
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "ReleaseTag=$ReleaseTag"
-            echo "::set-output name=status::success"
+            echo "status=success" >> $GITHUB_OUTPUT
           fi
           PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' )
           if [ "$PreReleaseTag" != "" ];then
-            echo "::set-output name=pre_version::${{ github.event.inputs.version }}"
+            echo "pre_version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "PreReleaseTag=$PreReleaseTag"
-            echo "::set-output name=status::success"
+            echo "pstatus=success" >> $GITHUB_OUTPUT
           fi
 
       # Build and push release
