@@ -48,12 +48,23 @@ jobs:
           go-version: ^1.22
       
       - name: Compile App
-        if: ${{ (steps.up-version.outputs.status == 'success') || (steps.up-version.outputs.pstatus == 'success') }}
+        if: steps.up-version.outputs.status == 'success'
         env:
           CGO_ENABLED: 0
         run: |
           go version
-          git clone -b ${{ steps.up-version.outputs.release_version }} https://github.com/SagerNet/sing-box.git
+          git clone -b ${{ steps.up-version.outputs.release_version }}  https://github.com/SagerNet/sing-box.git
+          cd sing-box
+          make
+          make install
+      
+      - name: Compile PreRelease App
+        if: steps.up-version.outputs.pstatus == 'success'
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go version
+          git clone -b ${{ steps.up-version.outputs.prerelease_version }}  https://github.com/SagerNet/sing-box.git
           cd sing-box
           make
           make install
