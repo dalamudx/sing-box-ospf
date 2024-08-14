@@ -41,12 +41,29 @@ jobs:
           echo "pre_version=${{ steps.up-version.outputs.prerelease_version }}" >> $GITHUB_OUTPUT
           echo "ReleaseTag=${{ steps.up-version.outputs.release_version }}" 
           echo "PreReleaseTag=${{ steps.up-version.outputs.prerelease_version }}"
-          
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^1.22
+      
+      - name: Compile App
+        if: ${{ (steps.up-version.outputs.status == 'success') || (steps.up-version.outputs.pstatus == 'success') }}
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go version
+          git clone -b ${{ steps.up-version.outputs.release_version }} https://github.com/SagerNet/sing-box.git
+          cd sing-box
+          make
+          make install
+      
       # Build and push latest_release
       - name: Build dockerfile
         if: steps.up-version.outputs.status == 'success'
         uses: docker/build-push-action@v6
         with:
+          context: .
           file: ./Dockerfile
           platforms: linux/arm64,linux/amd64
           push: true
@@ -61,6 +78,7 @@ jobs:
         if: steps.up-version.outputs.pstatus == 'success'
         uses: docker/build-push-action@v6
         with:
+          context: .
           file: ./Dockerfile
           platforms: linux/arm64,linux/amd64
           push: true

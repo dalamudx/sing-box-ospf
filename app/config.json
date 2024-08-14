@@ -35,7 +35,7 @@
       "inet4_address": "172.19.0.1/30",
       "inet6_address": "fd10::1/126",
       "auto_route": true,
-      "strict_route": true,
+      "strict_route": false,
       "endpoint_independent_nat": true,
       "mtu": 9000,
       "sniff": true,
