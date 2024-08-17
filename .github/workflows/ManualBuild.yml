@@ -36,13 +36,13 @@ jobs:
       - name: Set Version
         id: set-version
         run: |
-          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
+          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
           if [ "$ReleaseTag" != "false" ];then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "ReleaseTag=$ReleaseTag"
             echo "status=success" >> $GITHUB_OUTPUT
           fi
-          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
+          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
           if [ "$PreReleaseTag" != "false" ];then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "PreReleaseTag=$PreReleaseTag"
