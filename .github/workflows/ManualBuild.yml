@@ -52,7 +52,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ^1.22
+          go-version: 'stable'
 
       - name: Compile App
         if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.pstatus == 'success') }}
