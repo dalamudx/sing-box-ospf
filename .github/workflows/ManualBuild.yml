@@ -31,22 +31,22 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-      # 获得仓库中的ReleaseTag
+      # 获得仓库中的RELEASE_TAG
 
       - name: Set Version
         id: set-version
         run: |
-          ReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
-          if [ "$ReleaseTag" != "false" ];then
+          RELEASE_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == false) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
+          DEV_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
+          if [ "$RELEASE_TAG" != "false" ];then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "ReleaseTag=$ReleaseTag"
+            echo "RELEASE_TAG=$RELEASE_TAG"
             echo "status=success" >> $GITHUB_OUTPUT
           fi
-          PreReleaseTag=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100&page=1 | jq -r '.[] | select(.prerelease == true) | .tag_name'|grep -w '${{ github.event.inputs.version }}' || echo false )
-          if [ "$PreReleaseTag" != "false" ];then
+          if [ "$DEV_TAG" != "false" ];then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "PreReleaseTag=$PreReleaseTag"
-            echo "pstatus=success" >> $GITHUB_OUTPUT
+            echo "DEV_TAG=$DEV_TAG"
+            echo "dev_status=success" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
@@ -55,7 +55,7 @@ jobs:
           go-version: 'stable'
 
       - name: Compile App
-        if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.pstatus == 'success') }}
+        if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.dev_status == 'success') }}
         env:
           CGO_ENABLED: 0
         run: |
@@ -68,12 +68,12 @@ jobs:
 
       # Build and push release
       - name: Build dockerfile
-        if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.pstatus == 'success') }}
+        if: ${{ (steps.set-version.outputs.status == 'success') || (steps.set-version.outputs.dev_status == 'success') }}
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64
           push: true
           tags: |
             dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}

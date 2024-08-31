@@ -13,34 +13,43 @@ jobs:
         uses: actions/checkout@v4
 
       # 更新版本
-      - name: Execute Update Script
-        id: up-version
-        run: bash .github/workflows/update_release_tag.sh
+      - name: Check Update
+        id: check-update
+        run: |
+          RELEASE_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1)
+          DEV_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+          DOCKER_RELEASE_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${RELEASE_TAG} | jq '.name')
+          DOCKER_DEV_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${DEV_TAG} | jq '.name')
+          echo "Docker Release 版本: ${DOCKER_RELEASE_TAG}"
+          echo "Docker Dev 版本: ${DOCKER_DEV_TAG}"
+          echo "Git Release 版本: ${RELEASE_TAG}"
+          echo "Git Dev 版本: ${DEV_TAG}"
+          if [ "${DOCKER_RELEASE_TAG}" == "null" ]
+          then
+            echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "${DOCKER_DEV_TAG}" == "null" ]
+          then
+            echo "dev_tag=${DEV_TAG}" >> $GITHUB_OUTPUT
+            echo "dev_status=success" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up QEMU
-        if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
+        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
         uses: docker/setup-qemu-action@v3
       
       - name: Set up Docker Buildx
-        if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
+        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
+        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # 获得仓库中的ReleaseTag
-      - name: Set Version
-        if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.pstatus == 'success'
-        id: set-version
-        run: |
-          echo "version=${{ steps.up-version.outputs.release_version }}" >> $GITHUB_OUTPUT
-          echo "pre_version=${{ steps.up-version.outputs.prerelease_version }}" >> $GITHUB_OUTPUT
-          echo "ReleaseTag=${{ steps.up-version.outputs.release_version }}" 
-          echo "PreReleaseTag=${{ steps.up-version.outputs.prerelease_version }}"
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -48,57 +57,57 @@ jobs:
           go-version: 'stable'
       
       - name: Compile App
-        if: steps.up-version.outputs.status == 'success'
+        if: steps.check-update.outputs.status == 'success'
         env:
           CGO_ENABLED: 0
         run: |
           go version
-          git clone -b ${{ steps.up-version.outputs.release_version }}  https://github.com/SagerNet/sing-box.git
+          git clone -b ${{ steps.check-update.outputs.release_tag }}  https://github.com/SagerNet/sing-box.git
           cd sing-box
           make
           make install
     
       # Build and push latest_release
       - name: Build dockerfile
-        if: steps.up-version.outputs.status == 'success'
+        if: steps.check-update.outputs.status == 'success'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/arm64,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64
           push: true
           tags: |
-            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
+            dalamudx/sing-box-ospf:${{ steps.check-update.outputs.release_tag }}
             dalamudx/sing-box-ospf:latest
           build-args: |
-            VERSION=${{ steps.set-version.outputs.version }}
+            VERSION=${{ steps.check-update.outputs.release_tag }}
             
       - name: Compile PreRelease App
-        if: steps.up-version.outputs.pstatus == 'success'
+        if: steps.check-update.outputs.dev_status == 'success'
         env:
           CGO_ENABLED: 0
         run: |
           go version
           rm -rf sing-box
-          git clone -b ${{ steps.up-version.outputs.prerelease_version }}  https://github.com/SagerNet/sing-box.git
+          git clone -b ${{ steps.check-update.outputs.dev_tag }}  https://github.com/SagerNet/sing-box.git
           cd sing-box
           make
           make install
 
       # Build and push latest_prerelease
       - name: Build PreRelease dockerfile
-        if: steps.up-version.outputs.pstatus == 'success'
+        if: steps.check-update.outputs.dev_status == 'success'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/arm64,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64
           push: true
           tags: |
-            dalamudx/sing-box-ospf:${{ steps.set-version.outputs.pre_version }}
+            dalamudx/sing-box-ospf:${{ steps.check-update.outputs.dev_tag }}
             dalamudx/sing-box-ospf:dev
           build-args: |
-            VERSION=${{ steps.set-version.outputs.pre_version }}
+            VERSION=${{ steps.check-update.outputs.dev_tag }}
   del_runs:
     runs-on: ubuntu-latest
     permissions:
