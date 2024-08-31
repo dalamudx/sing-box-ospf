@@ -73,7 +73,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/arm64,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
             dalamudx/sing-box-ospf:${{ steps.set-version.outputs.version }}
