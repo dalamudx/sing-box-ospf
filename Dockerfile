@@ -23,4 +23,5 @@ RUN set -ex \
     && apk add --no-cache bash tzdata ca-certificates nftables curl bird supervisor jq
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 COPY entrypoint.sh /entrypoint.sh
+WORKDIR /app
 ENTRYPOINT /entrypoint.sh
