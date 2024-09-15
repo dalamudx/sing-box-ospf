@@ -5,7 +5,7 @@
   * 注意：1.9.x以上版本在tun模式下如果strict_route为true，会墙掉自身，外部无法访问容器端口
     
 ## 支持架构
-  - `amd64`
+  - `amd64`,`x86`,`armv6`,`armv7`,`arm64`,`ppc64le`,`riscv64`,`s390x`
 
 ## 镜像地址
 - https://hub.docker.com/r/dalamudx/sing-box-ospf

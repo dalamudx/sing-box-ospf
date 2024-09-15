@@ -3,16 +3,27 @@ name: Auto Build Docker Image
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 */1 * * *'
+
+env:
+  REGISTRY_IMAGE: dalamudx/sing-box-ospf
 
 jobs:
-  buildx:
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm/v6
+          - linux/arm/v7
+          - linux/arm64
+          - linux/386
+          - linux/ppc64le
+          - linux/riscv64
+          - linux/s390x
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # 更新版本
       - name: Check Update
         id: check-update
         run: |
@@ -26,97 +37,113 @@ jobs:
           echo "Git Dev 版本: ${DEV_TAG}"
           if [ "${DOCKER_RELEASE_TAG}" == "null" ]
           then
-            echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+            echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
             echo "status=success" >> $GITHUB_OUTPUT
-          fi
-
-          if [ "${DOCKER_DEV_TAG}" == "null" ]
+          elif [ "${DOCKER_DEV_TAG}" == "null" ]
           then
-            echo "dev_tag=${DEV_TAG}" >> $GITHUB_OUTPUT
-            echo "dev_status=success" >> $GITHUB_OUTPUT
+            echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=fail" >> $GITHUB_OUTPUT
           fi
-
-      - name: Set up QEMU
-        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
+      - name: Check if branch is main
+        if: steps.check-update.outputs.status == 'fail'
+        cancel: true
+      - name: Checkout sing-box-ospf
+        uses: actions/checkout@v4
+        with:
+          path: sing-box-ospf
+      - name: Checkout sing-box
+        uses: actions/checkout@v4
+        with:
+          repository: SagerNet/sing-box
+          path: sing-box
+          ref: ${{ steps.check-update.outputs.tag }}
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          mv sing-box-ospf/Dockerfile sing-box/Dockerfile
+          mv sing-box-ospf/entrypoint.sh sing-box/entrypoint.sh
+      - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
-      
-      - name: Set up Docker Buildx
-        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Login to Docker Hub
-        if: steps.check-update.outputs.status == 'success' || steps.check-update.outputs.dev_status == 'success'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          go-version: 'stable'
-      
-      - name: Compile App
-        if: steps.check-update.outputs.status == 'success'
-        env:
-          CGO_ENABLED: 0
-        run: |
-          go version
-          git clone -b ${{ steps.check-update.outputs.release_tag }}  https://github.com/SagerNet/sing-box.git
-          cd sing-box
-          make
-          make install
-    
-      # Build and push latest_release
-      - name: Build dockerfile
-        if: steps.check-update.outputs.status == 'success'
+          images: ${{ env.REGISTRY_IMAGE }}
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            dalamudx/sing-box-ospf:${{ steps.check-update.outputs.release_tag }}
-            dalamudx/sing-box-ospf:latest
+          platforms: ${{ matrix.platform }}
+          context: ./sing-box
           build-args: |
-            VERSION=${{ steps.check-update.outputs.release_tag }}
-            
-      - name: Compile PreRelease App
-        if: steps.check-update.outputs.dev_status == 'success'
-        env:
-          CGO_ENABLED: 0
+            BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - name: Export digest
         run: |
-          go version
-          rm -rf sing-box
-          git clone -b ${{ steps.check-update.outputs.dev_tag }}  https://github.com/SagerNet/sing-box.git
-          cd sing-box
-          make
-          make install
-
-      # Build and push latest_prerelease
-      - name: Build PreRelease dockerfile
-        if: steps.check-update.outputs.dev_status == 'success'
-        uses: docker/build-push-action@v6
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
         with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            dalamudx/sing-box-ospf:${{ steps.check-update.outputs.dev_tag }}
-            dalamudx/sing-box-ospf:dev
-          build-args: |
-            VERSION=${{ steps.check-update.outputs.dev_tag }}
-  del_runs:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+  merge:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
+    needs:
+      - build
     steps:
-      - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
+      - name: Get commit to build
+        id: ref
+        run: |-
+          if [[ -z "${{ steps.check-update.outputs.tag }}" ]]; then
+            ref="${{ github.ref_name }}"
+          else
+            ref="${{ steps.check-update.outputs.tag }}"
+          fi
+          echo "ref=$ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+          if [[ $ref == *"-"* ]]; then
+            latest=dev
+          else
+            latest=latest
+          fi
+          echo "latest=$latest"
+          echo "latest=$latest" >> $GITHUB_OUTPUT
+      - name: Download digests
+        uses: actions/download-artifact@v4
         with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 0
-          keep_minimum_runs: 6
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            -t "${{ env.REGISTRY_IMAGE }}:${{ steps.ref.outputs.latest }}" \
+            -t "${{ env.REGISTRY_IMAGE }}:${{ steps.ref.outputs.ref }}" \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.ref.outputs.latest }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.ref.outputs.ref }}

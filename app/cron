@@ -1,1 +1,1 @@
-* */2 * * * /bin/sh /app/update
+0 */2 * * * /bin/sh /app/update
