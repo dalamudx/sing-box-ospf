@@ -20,7 +20,7 @@ RUN set -ex \
 FROM --platform=$TARGETPLATFORM alpine AS dist
 RUN set -ex \
     && apk upgrade --no-cache \
-    && apk add --no-cache bash tzdata ca-certificates nftables curl bird supervisor jq
+    && apk add --no-cache bash tzdata ca-certificates nftables curl bird supervisor jq git
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 COPY entrypoint.sh /entrypoint.sh
 WORKDIR /app
