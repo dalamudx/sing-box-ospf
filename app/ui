@@ -1,6 +1,7 @@
 #!/bin/sh
 UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/config.json|grep -oE 'metacubexd|Yacd-meta')
-INSTALL_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/config.json)
+UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/config.json)
+INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/${UI_DIR})
 METACUBEX_LINK="https://github.com/MetaCubeX/metacubexd.git"
 YACD_LINK="https://github.com/MetaCubeX/Yacd-meta.git"
 BRANCH="gh-pages"
@@ -9,22 +10,18 @@ PROXY="https://mirror.ghproxy.com"
 if [ "${INSTALL_DIR}" != "null" ]
 then
     #update ui
-    cd ${INSTALL_DIR}
-    git pull
+    git -C ${INSTALL_DIR} pull -r
     #replace ui
     if [ $? -ne 0 ]
     then
         if [[ "${UI}" == "Yacd-meta" || "${UI}" == "null" ]]
         then
             rm -rf ${INSTALL_DIR}
-            cd /app
-            git clone -b ${BRANCH} ${PROXY}/${YACD_LINK}
-            mv Yacd-meta ${INSTALL_DIR}
+            git clone -b ${BRANCH} ${PROXY}/${YACD_LINK} ${INSTALL_DIR}
         elif [ "${UI}" == "metacubexd" ]
         then
             rm -rf ${INSTALL_DIR}
-            cd /app
-            git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK}
+            git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${INSTALL_DIR}
             mv metacubexd ${INSTALL_DIR}
         fi
     fi
