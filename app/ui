@@ -1,7 +1,7 @@
 #!/bin/sh
 UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/sing-box/config.json|grep -oE 'metacubexd|Yacd-meta')
 UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/sing-box/config.json)
-INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/${UI_DIR})
+INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/sing-box/${UI_DIR})
 METACUBEX_LINK="https://github.com/MetaCubeX/metacubexd.git"
 YACD_LINK="https://github.com/MetaCubeX/Yacd-meta.git"
 BRANCH="gh-pages"
