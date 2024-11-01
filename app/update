@@ -1,8 +1,10 @@
 #!/bin/sh
 #update static routes
-curl -Lo /app/routes4.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
-curl -Lo /app/routes6.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
+curl -Lo /app/bird/routes4.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
+curl -Lo /app/bird/routes6.conf https://mirror.ghproxy.com/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
 birdc configure
 #update geo files
-curl -Lo /app/geoip.db https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.db
-curl -Lo /app/geosite.db https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.db
+curl -Lo /app/sing-box/geoip.db https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.db
+curl -Lo /app/sing-box/geosite.db https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.db
+#update ui
+sh /app/ui

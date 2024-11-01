@@ -1,13 +1,13 @@
 #!/bin/sh
-UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/config.json|grep -oE 'metacubexd|Yacd-meta')
-UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/config.json)
+UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/sing-box/config.json|grep -oE 'metacubexd|Yacd-meta')
+UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/sing-box/config.json)
 INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/${UI_DIR})
 METACUBEX_LINK="https://github.com/MetaCubeX/metacubexd.git"
 YACD_LINK="https://github.com/MetaCubeX/Yacd-meta.git"
 BRANCH="gh-pages"
 PROXY="https://mirror.ghproxy.com"
 #update or replace the ui via git
-if [ "${INSTALL_DIR}" != "null" ]
+if [[ "${INSTALL_DIR}" != "null" || "${INSTALL_DIR}" != "/" ]]
 then
     #update ui
     git -C ${INSTALL_DIR} pull -r
@@ -22,7 +22,6 @@ then
         then
             rm -rf ${INSTALL_DIR}
             git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${INSTALL_DIR}
-            mv metacubexd ${INSTALL_DIR}
         fi
     fi
 fi

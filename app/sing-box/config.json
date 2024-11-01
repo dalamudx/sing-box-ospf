@@ -152,13 +152,13 @@
   "experimental": {
     "clash_api": {
       "external_controller": "0.0.0.0:9090",
-      "external_ui": "/app/static/",
+      "external_ui": "/app/sing-box/static/",
       "external_ui_download_detour": "",
       "external_ui_download_url": "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip"
     },
     "cache_file": {
       "enabled": true,
-      "path": "./cache.db",
+      "path": "cache.db",
       "cache_id": "hysteria_profile",
       "store_fakeip": true
     }
