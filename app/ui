@@ -18,7 +18,7 @@ then
         if [[ "${UI}" == "Yacd-meta" || "${UI}" == "null" ]]
         then
             git clone -b ${BRANCH} ${PROXY}/${YACD_LINK} ${TEMP_DIR}
-            if [ $? -ne 0 ]
+            if [ $? -eq 0 ]
             then
                 rm -rf ${INSTALL_DIR}
                 mv ${TEMP_DIR} ${INSTALL_DIR}
@@ -28,7 +28,7 @@ then
         elif [ "${UI}" == "metacubexd" ]
         then
             git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${TEMP_DIR}
-            if [ $? -ne 0 ]
+            if [ $? -eq 0 ]
             then
                 rm -rf ${INSTALL_DIR}
                 mv ${TEMP_DIR} ${INSTALL_DIR}
