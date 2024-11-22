@@ -48,6 +48,8 @@
   `supervisorctl restart all` 重启所有服务\
   `supervisorctl restart sing-box` 单独重启sing-box服务
 ## 更新历史
+- 2024-11-19 修复git拉取仓库命令失败时会导致UI丢失的问题，更安全地更新UI\
+             文件修改：`app/ui`
 - 2024-11-01 配置文件迁移到指定目录下，由原来的`app`目录，分别迁移到`app/bird`和`app/sing-box`\
              文件修改：`app/cron`、`app/ui`、`app/update`、`supervisor.d/service.ini`\
              该更新仅对服务对应的配置文件进行分门别类，无需更新镜像
