@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: '0 */1 * * *'
 env:
-  REGISTRY_IMAGE: dalamudx/sing-box-ospf
+  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf
 
 jobs:
   check:
@@ -20,8 +20,8 @@ jobs:
         run: |
           RELEASE_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1)
           DEV_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
-          DOCKER_RELEASE_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${RELEASE_TAG} | jq '.name')
-          DOCKER_DEV_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${DEV_TAG} | jq '.name')
+          DOCKER_RELEASE_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf/tags/${RELEASE_TAG} | jq '.name')
+          DOCKER_DEV_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf/tags/${DEV_TAG} | jq '.name')
           echo "Docker Release 版本: ${DOCKER_RELEASE_TAG}"
           echo "Docker Dev 版本: ${DOCKER_DEV_TAG}"
           echo "Git Release 版本: ${RELEASE_TAG}"

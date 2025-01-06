@@ -1,1 +1,3 @@
 0 */2 * * * /bin/sh /app/update
+0 */2 * * * /bin/sh /app/ui
+*/2 * * * * /bin/sh /app/monitor_conn

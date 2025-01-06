@@ -8,7 +8,7 @@ on:
         description: "Specific the tag you want to build"
 
 env:
-  REGISTRY_IMAGE: dalamudx/sing-box-ospf
+  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf
 
 jobs:
   check:
@@ -22,7 +22,7 @@ jobs:
         run: |
           TAG=v${{ github.event.inputs.tag }}
           GIT_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases?per_page=100 | jq -r '.[] | .tag_name'|grep $TAG)
-          DOCKER_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/dalamudx/sing-box-ospf/tags/${GIT_TAG} | jq '.name')
+          DOCKER_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf/tags/${GIT_TAG} | jq '.name')
           echo "Docker 版本: ${DOCKER_TAG}"
           echo "Git Release 版本: ${GIT_TAG}"
           if [ "${GIT_TAG}" != "" ]
