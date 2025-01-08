@@ -48,8 +48,7 @@
   `supervisorctl restart all` 重启所有服务\
   `supervisorctl restart sing-box` 单独重启sing-box服务
 ## 更新历史
-- 2025-01-06 优化workflow，使用vless协议会有大量连接不会自动关闭达到上千连接数，会被部分防火墙误认为来自同一IP的DDoS攻击，增\
-             加网络连接数检查，两分钟检查一次大于200后重启sing-box，可根据自己需求修改\
+- 2025-01-06 优化workflow，使用vless协议会有大量连接不会自动关闭达到上千连接数，会被部分防火墙误认为来自同一IP的DDoS攻击，增加网络连接数检查，两分钟检查一次大于200后重启sing-box，可根据自己需求修改\
              文件增加：`app/monitor_conn`\
              文件修改：`app/cron`
 - 2024-11-19 修复git拉取仓库命令失败时会导致UI丢失的问题，更安全地更新UI\
