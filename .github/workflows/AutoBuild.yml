@@ -14,6 +14,7 @@ jobs:
       tag: ${{ steps.check-update.outputs.tag }}
       status: ${{ steps.check-update.outputs.status }}
       channel: ${{ steps.check-update.outputs.channel }}
+      options: ${{ steps.check-update.outputs.options }}
     steps:
       - name: Check Update
         id: check-update
@@ -30,14 +31,18 @@ jobs:
           then
             if [ "${DOCKER_RELEASE_TAG}" == "null" ]
             then
-                echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-                echo "status=success" >> $GITHUB_OUTPUT
-                echo "channel=latest" >> $GITHUB_OUTPUT
+              options=$(curl -sSL https://raw.githubusercontent.com/SagerNet/sing-box/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "channel=latest" >> $GITHUB_OUTPUT
+              echo "options=${options}" >> $GITHUB_OUTPUT
             elif [ "${DOCKER_DEV_TAG}" == "null" ]
             then
+              options=$(curl -sSL https://raw.githubusercontent.com/SagerNet/sing-box/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
               echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=dev" >> $GITHUB_OUTPUT
+              echo "options=${options}" >> $GITHUB_OUTPUT
             else
               echo "status=fail" >> $GITHUB_OUTPUT
             fi
@@ -105,6 +110,7 @@ jobs:
           context: ./sing-box
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+            OPTIONS=${{ needs.check.outputs.options }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
