@@ -1,14 +1,31 @@
-name: Auto Build Docker Image
+# 🚀 自动构建 Sing-Box OSPF 镜像
+name: 🔄 Auto Build Docker Image
 
+# 触发条件
 on:
+  # 手动触发
   workflow_dispatch:
+  # 定时触发 (每小时)
   schedule:
     - cron: '0 */1 * * *'
-env:
-  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf
 
+# 权限设置
+permissions:
+  contents: read  # 读取仓库内容
+  packages: write # 写入包 (用于推送镜像)
+
+# 全局环境变量
+env:
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+  SING_BOX_REPO: SagerNet/sing-box
+
+# 工作流任务
 jobs:
+  # ==========================================
+  # 检查是否需要构建新版本
+  # ==========================================
   check:
+    name: 🔍 检查更新
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.check-update.outputs.tag }}
@@ -16,41 +33,66 @@ jobs:
       channel: ${{ steps.check-update.outputs.channel }}
       options: ${{ steps.check-update.outputs.options }}
     steps:
-      - name: Check Update
+      - name: 🔎 检查 Sing-Box 版本
         id: check-update
         run: |
-          RELEASE_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1)
-          DEV_TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
-          DOCKER_RELEASE_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf/tags/${RELEASE_TAG} | jq '.name')
-          DOCKER_DEV_TAG=$(curl -s -X GET https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/sing-box-ospf/tags/${DEV_TAG} | jq '.name')
-          echo "Docker Release 版本: ${DOCKER_RELEASE_TAG}"
-          echo "Docker Dev 版本: ${DOCKER_DEV_TAG}"
-          echo "Git Release 版本: ${RELEASE_TAG}"
-          echo "Git Dev 版本: ${DEV_TAG}"
+          # 获取最新的稳定版和开发版标签
+          RELEASE_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1)
+          DEV_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+
+          # 获取仓库名称（不含所有者）
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d '/' -f 2)
+          
+          # 检查 GitHub Container Registry 中是否已存在该标签
+          GHCR_RELEASE_TAG=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/user/packages/container/${REPO_NAME}/versions" | \
+            jq -r '.[] | select(.metadata.container.tags[] | contains("'${RELEASE_TAG}'")) | .name' | head -n 1)
+          
+          GHCR_DEV_TAG=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/user/packages/container/${REPO_NAME}/versions" | \
+            jq -r '.[] | select(.metadata.container.tags[] | contains("'${DEV_TAG}'")) | .name' | head -n 1)
+          
+          # 输出版本信息
+          echo "📦 GHCR Release 版本: ${GHCR_RELEASE_TAG}"
+          echo "📦 GHCR Dev 版本: ${GHCR_DEV_TAG}"
+          echo "🏷️ Git Release 版本: ${RELEASE_TAG}"
+          echo "🏷️ Git Dev 版本: ${DEV_TAG}"
+          
+          # 判断是否需要构建
           if [ "${RELEASE_TAG}" != "" ] && [ "${DEV_TAG}" != "" ]
           then
-            if [ "${DOCKER_RELEASE_TAG}" == "null" ]
+            if [ "${GHCR_RELEASE_TAG}" == "" ]
             then
-              options=$(curl -sSL https://raw.githubusercontent.com/SagerNet/sing-box/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              # 获取编译选项
+              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              echo "✅ 需要构建稳定版: ${RELEASE_TAG}"
               echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=latest" >> $GITHUB_OUTPUT
               echo "options=${options}" >> $GITHUB_OUTPUT
-            elif [ "${DOCKER_DEV_TAG}" == "null" ]
+            elif [ "${GHCR_DEV_TAG}" == "" ]
             then
-              options=$(curl -sSL https://raw.githubusercontent.com/SagerNet/sing-box/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              # 获取开发版编译选项
+              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              echo "✅ 需要构建开发版: ${DEV_TAG}"
               echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=dev" >> $GITHUB_OUTPUT
               echo "options=${options}" >> $GITHUB_OUTPUT
             else
+              echo "⏭️ 标签 ${RELEASE_TAG} 和 ${DEV_TAG} 已存在于 GitHub Container Registry 中"
               echo "status=fail" >> $GITHUB_OUTPUT
             fi
           else
+              echo "❌ 无法找到 Git 标签"
               echo "status=fail" >> $GITHUB_OUTPUT
           fi
-          
+
+  # ==========================================
+  # 构建多平台镜像
+  # ==========================================
   build:
+    name: 🏗️ 构建 ${{ matrix.platform }}
     needs: check
     if: ${{ needs.check.outputs.status != 'fail' }}
     runs-on: ubuntu-latest
@@ -67,32 +109,39 @@ jobs:
           - linux/riscv64
           - linux/s390x
     steps:
-      - name: Checkout sing-box-ospf
+      - name: 📥 检出 sing-box-ospf
         uses: actions/checkout@v4
         with:
           path: sing-box-ospf
-      - name: Checkout sing-box
+          
+      - name: 📥 检出 sing-box ${{ needs.check.outputs.tag }}
         uses: actions/checkout@v4
         with:
-          repository: SagerNet/sing-box
+          repository: ${{ env.SING_BOX_REPO }}
           path: sing-box
           ref: ${{ needs.check.outputs.tag }}
-      - name: Prepare
+          
+      - name: 🔧 准备构建环境
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
           mv sing-box-ospf/Dockerfile sing-box/Dockerfile
           mv sing-box-ospf/entrypoint.sh sing-box/entrypoint.sh
-      - name: Setup QEMU
+          
+      - name: 🛠️ 设置 QEMU
         uses: docker/setup-qemu-action@v3
-      - name: Setup Docker Buildx
+        
+      - name: 🛠️ 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
+        
+      - name: 🔑 登录 GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Docker meta
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+          
+      - name: 📋 生成 Docker 元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -102,7 +151,8 @@ jobs:
           tags: |
               type=raw,value=${{ needs.check.outputs.tag }}
               type=raw,value=${{ needs.check.outputs.channel }}
-      - name: Build and push by digest
+              
+      - name: 🔨 构建并推送镜像
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -111,36 +161,49 @@ jobs:
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
             OPTIONS=${{ needs.check.outputs.options }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=Sing-Box with OSPF support
+            org.opencontainers.image.licenses=MIT
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
+          
+      - name: 📤 导出摘要
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-      - name: Upload digest
+          
+      - name: 📦 上传摘要
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
+
+  # ==========================================
+  # 合并多平台镜像
+  # ==========================================
   merge:
+    name: 🔄 合并多平台镜像
     if: ${{ needs.check.outputs.status != 'fail' }}
     runs-on: ubuntu-latest
     needs:
       - check
       - build
     steps:
-      - name: Download digests
+      - name: 📥 下载摘要
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
-      - name: Set up Docker Buildx
+          
+      - name: 🛠️ 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Docker meta
+        
+      - name: 📋 生成 Docker 元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -150,25 +213,34 @@ jobs:
           tags: |
               type=raw,value=${{ needs.check.outputs.tag }}
               type=raw,value=${{ needs.check.outputs.channel }}
-      - name: Login to Docker Hub
+              
+      - name: 🔑 登录 GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Create manifest list and push
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+          
+      - name: 🔄 创建清单列表并推送
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      - name: Inspect image
+            
+      - name: 🔍 检查镜像
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+
+  # ==========================================
+  # 清理旧的工作流运行记录
+  # ==========================================
   delete_runs:
+    name: 🧹 清理旧的工作流运行
     runs-on: ubuntu-latest
     permissions:
       actions: write
     steps:
-      - name: Delete workflow runs
+      - name: 🗑️ 删除旧的工作流运行
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}

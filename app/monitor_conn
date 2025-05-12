@@ -1,7 +1,0 @@
-#!/bin/bash
-CONNECTIONS=$(netstat -an | grep ESTABLISHED | wc -l)
-# Check if the number of connections is greater than 200
-if [ $CONNECTIONS -gt 200 ]; then
-  echo "Restarting application due to high network connections ($CONNECTIONS)"
-  supervisorctl restart sing-box
-fi
