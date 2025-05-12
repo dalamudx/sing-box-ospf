@@ -35,10 +35,11 @@ jobs:
     steps:
       - name: 🔎 检查 Sing-Box 版本
         id: check-update
+        shell: bash
         run: |
           # 获取最新的稳定版和开发版标签
-          RELEASE_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1)
-          DEV_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+          RELEASE_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1 || echo "")
+          DEV_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1 || echo "")
 
           # 获取仓库名称（不含所有者）
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d '/' -f 2)
@@ -46,11 +47,11 @@ jobs:
           # 检查 GitHub Container Registry 中是否已存在该标签
           GHCR_RELEASE_TAG=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
             "https://api.github.com/user/packages/container/${REPO_NAME}/versions" | \
-            jq -r '.[] | select(.metadata.container.tags[] | contains("'${RELEASE_TAG}'")) | .name' | head -n 1)
+            jq -r '.[] | select(.metadata.container.tags[] | contains("'${RELEASE_TAG}'")) | .name' | head -n 1 || echo "")
           
           GHCR_DEV_TAG=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
             "https://api.github.com/user/packages/container/${REPO_NAME}/versions" | \
-            jq -r '.[] | select(.metadata.container.tags[] | contains("'${DEV_TAG}'")) | .name' | head -n 1)
+            jq -r '.[] | select(.metadata.container.tags[] | contains("'${DEV_TAG}'")) | .name' | head -n 1 || echo "")
           
           # 输出版本信息
           echo "📦 GHCR Release 版本: ${GHCR_RELEASE_TAG}"
@@ -59,21 +60,21 @@ jobs:
           echo "🏷️ Git Dev 版本: ${DEV_TAG}"
           
           # 判断是否需要构建
-          if [ "${RELEASE_TAG}" != "" ] && [ "${DEV_TAG}" != "" ]
+          if [ -n "${RELEASE_TAG}" ] && [ -n "${DEV_TAG}" ]
           then
-            if [ "${GHCR_RELEASE_TAG}" == "" ]
+            if [ -z "${GHCR_RELEASE_TAG}" ]
             then
               # 获取编译选项
-              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
               echo "✅ 需要构建稳定版: ${RELEASE_TAG}"
               echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=latest" >> $GITHUB_OUTPUT
               echo "options=${options}" >> $GITHUB_OUTPUT
-            elif [ "${GHCR_DEV_TAG}" == "" ]
+            elif [ -z "${GHCR_DEV_TAG}" ]
             then
               # 获取开发版编译选项
-              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}')
+              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
               echo "✅ 需要构建开发版: ${DEV_TAG}"
               echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
@@ -122,6 +123,7 @@ jobs:
           ref: ${{ needs.check.outputs.tag }}
           
       - name: 🔧 准备构建环境
+        shell: bash
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
@@ -169,6 +171,7 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           
       - name: 📤 导出摘要
+        shell: bash
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
@@ -222,12 +225,14 @@ jobs:
           password: ${{ github.token }}
           
       - name: 🔄 创建清单列表并推送
+        shell: bash
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
             
       - name: 🔍 检查镜像
+        shell: bash
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
 
