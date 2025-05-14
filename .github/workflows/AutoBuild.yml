@@ -58,7 +58,7 @@ jobs:
           # 判断是否需要构建
           if [ -n "${RELEASE_TAG}" ] && [ -n "${DEV_TAG}" ]
           then
-            if [ -z "${GHCR_RELEASE_TAG}" ]
+            if [ -n "${GHCR_RELEASE_TAG}" ] && [ "${GHCR_RELEASE_TAG}" != "${RELEASE_TAG}" ]
             then
               # 获取编译选项
               options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
@@ -67,7 +67,7 @@ jobs:
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=latest" >> $GITHUB_OUTPUT
               echo "options=${options}" >> $GITHUB_OUTPUT
-            elif [ -z "${GHCR_DEV_TAG}" ]
+            elif [ -n "${GHCR_DEV_TAG}" ] && [ "${GHCR_DEV_TAG}" != "${DEV_TAG}" ]
             then
               # 获取开发版编译选项
               options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
@@ -76,6 +76,11 @@ jobs:
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=dev" >> $GITHUB_OUTPUT
               echo "options=${options}" >> $GITHUB_OUTPUT
+            elif [ -z "${GHCR_RELEASE_TAG}" ] || [ -z "${GHCR_DEV_TAG}" ]
+            then
+              # 获取仓库版本失败
+              echo "❌ 获取 GitHub Container Registry 仓库版本失败"
+              echo "status=fail" >> $GITHUB_OUTPUT
             else
               echo "⏭️ 标签 ${RELEASE_TAG} 和 ${DEV_TAG} 已存在于 GitHub Container Registry 中"
               echo "status=fail" >> $GITHUB_OUTPUT
