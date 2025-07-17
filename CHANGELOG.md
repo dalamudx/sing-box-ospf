@@ -5,6 +5,17 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2025-07-17]
+
+### 变更
+- 新增对UI [zashboard](https://github.com/Zephyruso/zashboard) 的更新支持
+- 对 git 的相关操作添加 `--depth 1` 选项以减小体积
+- 优化 UI 更新逻辑
+- 替换 update 中的代理地址 
+
+### 修改
+- 更新 `app/ui` 文件
+- 更新 `app/update` 文件
 
 ## [2025-05-13]
 

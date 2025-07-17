@@ -13,7 +13,7 @@ _基于 [sing-box](https://github.com/SagerNet/sing-box) 的多功能容器，�
 ## ✨ 特性
 
 - 🔄 利用 GitHub Actions 自动编译最新版 [sing-box](https://github.com/SagerNet/sing-box)
-- 🖥️ 定时更新 UI，支持 [metacubexd](https://github.com/MetaCubeX/metacubexd) 和 [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
+- 🖥️ 定时更新 UI，支持 [metacubexd](https://github.com/MetaCubeX/metacubexd) 、[zashboard](https://github.com/Zephyruso/zashboard) 和 [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
 - 🌐 集成 OSPF 路由功能 (基于 bird2 实现)
 - 🛡️ 定期修复容器中存在的严重漏洞
 
@@ -78,13 +78,13 @@ docker run -d \
 ├── app
 │   ├── bird
 │   │   ├── bird.conf     # bird配置文件
-│   │   ├── routes4.conf  # ipv4静态路由
-│   │   └── routes6.conf  # ipv6静态路由
+│   │   ├── routes4.conf  # ipv4路由
+│   │   └── routes6.conf  # ipv6路由
 │   ├── cron              # 定时任务
 │   ├── sing-box
 │   │   └── config.json   # sing-box配置文件
 │   ├── ui                # UI更新脚本
-│   └── update            # 静态路由、GEO文件、UI更新
+│   └── update            # 路由、GEO文件、UI更新
 ├── Dockerfile
 ├── entrypoint.sh
 ├── README.md
@@ -121,7 +121,7 @@ docker run -d \
     `app/cron`，`app/update`，`app/ui`，`supervisor.d/service.ini`
 
 - **静态路由配置**:
-  - 如需应用启动后立即广播静态路由，请提前准备 `routes4.conf` 和 `routes6.conf` 放到 `app/bird` 目录
+  - 如需应用启动后立即广播路由，请提前准备 `routes4.conf` 和 `routes6.conf` 放到 `app/bird` 目录
   - 或在容器启动后手动执行 `sh /app/update`
 
 - **UI 更新机制**:
