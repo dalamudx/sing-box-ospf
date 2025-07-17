@@ -1,40 +1,37 @@
 #!/bin/sh
-UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/sing-box/config.json|grep -oE 'metacubexd|Yacd-meta')
+UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/sing-box/config.json|grep -oE 'metacubexd|Yacd-meta|zashboard')
 UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/sing-box/config.json)
 INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/sing-box/${UI_DIR})
 TEMP_DIR=/app/sing-box/temp
 METACUBEX_LINK="https://github.com/MetaCubeX/metacubexd.git"
 YACD_LINK="https://github.com/MetaCubeX/Yacd-meta.git"
+ZASHBOURD_LINK="https://github.com/Zephyruso/zashboard.git"
 BRANCH="gh-pages"
-PROXY="https://mirror.ghproxy.com"
+PROXY="https://edgeone.gh-proxy.com"
 #update or replace the ui via git
 if [[ "${INSTALL_DIR}" != "null" || "${INSTALL_DIR}" != "/" ]]
 then
     #update ui
-    git -C ${INSTALL_DIR} pull -r
+    git -C ${INSTALL_DIR} pull --depth 1 -r
     #replace ui
     if [ $? -ne 0 ]
     then
         if [[ "${UI}" == "Yacd-meta" || "${UI}" == "null" ]]
         then
-            git clone -b ${BRANCH} ${PROXY}/${YACD_LINK} ${TEMP_DIR}
-            if [ $? -eq 0 ]
-            then
-                rm -rf ${INSTALL_DIR}
-                mv ${TEMP_DIR} ${INSTALL_DIR}
-            else
-                rm -rf ${TEMP_DIR}
-            fi
+            git clone -b ${BRANCH} ${PROXY}/${YACD_LINK} ${TEMP_DIR} --depth 1
         elif [ "${UI}" == "metacubexd" ]
         then
-            git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${TEMP_DIR}
-            if [ $? -eq 0 ]
-            then
-                rm -rf ${INSTALL_DIR}
-                mv ${TEMP_DIR} ${INSTALL_DIR}
-            else
-                rm -rf ${TEMP_DIR}
-            fi
+            git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${TEMP_DIR} --depth 1
+        elif [ "${UI}" == "zashboard" ]
+        then
+            git clone -b ${BRANCH} ${PROXY}/${ZASHBOURD_LINK} ${TEMP_DIR} --depth 1
+        fi
+        if [ $? -eq 0 ]
+        then
+            rm -rf ${INSTALL_DIR}
+            mv ${TEMP_DIR} ${INSTALL_DIR}
+        else
+            rm -rf ${TEMP_DIR}
         fi
     fi
 fi

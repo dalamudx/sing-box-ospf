@@ -1,5 +1,5 @@
 #!/bin/sh
-ROUTE_PROXY="https://mirror.ghproxy.com"
+ROUTE_PROXY="https://edgeone.gh-proxy.com"
 GEO_PROXY="https://cdn.jsdelivr.net"
 #update static routes
 curl -Lo /app/bird/routes4.conf ${ROUTE_PROXY}/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
