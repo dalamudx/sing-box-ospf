@@ -16,7 +16,7 @@ RUN set -ex \
     && go build -v -trimpath -tags \
     "${OPTIONS}" \
         -o /go/bin/sing-box \
-        -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
+        -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid= -checklinkname=0" \
         ./cmd/sing-box
 FROM --platform=$TARGETPLATFORM alpine AS dist
 RUN set -ex \
