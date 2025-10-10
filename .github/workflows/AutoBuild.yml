@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   # 定时触发 (每小时)
   schedule:
-    - cron: '0 */1 * * *'
+    - cron: '0 0/4 * * *'
 
 # 权限设置
 permissions:
