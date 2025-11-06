@@ -1,14 +1,12 @@
 FROM --platform=$BUILDPLATFORM golang:alpine AS builder
 COPY . /go/src/github.com/sagernet/sing-box
 WORKDIR /go/src/github.com/sagernet/sing-box
-ARG TARGETOS TARGETARCH OPTIONS
-ARG GOPROXY=""
-ENV GOPROXY ${GOPROXY}
+ARG OPTIONS
+
 ENV CGO_ENABLED=0
-ENV GOOS=$TARGETOS
-ENV GOARCH=$TARGETARCH
 ENV OPTIONS=$OPTIONS
 RUN set -ex \
+    && apk update \
     && apk upgrade --no-cache \
     && apk add --no-cache git build-base \
     && export COMMIT=$(git rev-parse --short HEAD) \
@@ -20,8 +18,9 @@ RUN set -ex \
         ./cmd/sing-box
 FROM --platform=$TARGETPLATFORM alpine AS dist
 RUN set -ex \
-    && apk upgrade --no-cache \
-    && apk add --no-cache bash tzdata ca-certificates nftables curl bird supervisor jq git
+    && apk update \
+    && apk upgrade \
+    && apk add bash tzdata ca-certificates nftables curl bird supervisor jq git
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 COPY entrypoint.sh /entrypoint.sh
 WORKDIR /app

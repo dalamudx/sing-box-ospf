@@ -5,7 +5,7 @@ name: 🔄 Auto Build Docker Image
 on:
   # 手动触发
   workflow_dispatch:
-  # 定时触发 (每小时)
+  # 定时触发
   schedule:
     - cron: '0 0/4 * * *'
 

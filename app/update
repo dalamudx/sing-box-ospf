@@ -9,4 +9,4 @@ birdc configure
 curl -Lo /app/sing-box/geoip.db ${GEO_PROXY}/gh/MetaCubeX/meta-rules-dat@release/geoip.db
 curl -Lo /app/sing-box/geosite.db ${GEO_PROXY}/gh/MetaCubeX/meta-rules-dat@release/geosite.db
 #update ui
-sh /app/ui
+/bin/sh /app/ui
