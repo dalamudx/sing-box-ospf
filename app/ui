@@ -7,7 +7,6 @@ METACUBEX_LINK="https://github.com/MetaCubeX/metacubexd.git"
 YACD_LINK="https://github.com/MetaCubeX/Yacd-meta.git"
 ZASHBOURD_LINK="https://github.com/Zephyruso/zashboard.git"
 BRANCH="gh-pages"
-PROXY="https://edgeone.gh-proxy.com"
 #update or replace the ui via git
 if [[ "${INSTALL_DIR}" != "null" || "${INSTALL_DIR}" != "/" ]]
 then
@@ -18,13 +17,13 @@ then
     then
         if [[ "${UI}" == "Yacd-meta" || "${UI}" == "null" ]]
         then
-            git clone -b ${BRANCH} ${PROXY}/${YACD_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}/${YACD_LINK} ${TEMP_DIR} --depth 1
         elif [ "${UI}" == "metacubexd" ]
         then
-            git clone -b ${BRANCH} ${PROXY}/${METACUBEX_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}/${METACUBEX_LINK} ${TEMP_DIR} --depth 1
         elif [ "${UI}" == "zashboard" ]
         then
-            git clone -b ${BRANCH} ${PROXY}/${ZASHBOURD_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}/${ZASHBOURD_LINK} ${TEMP_DIR} --depth 1
         fi
         if [ $? -eq 0 ]
         then

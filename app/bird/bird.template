@@ -1,6 +1,6 @@
 log syslog all;
 
-router id x.x.x.x;
+router id ${BIRD_ROUTER_ID};
 
 
 protocol device {
@@ -35,7 +35,7 @@ protocol ospf v2 {
                 export all;
         };
         area 0.0.0.0 {
-                interface "eth0" {
+                interface "${BIRD_INTERFACE}" {
 			authentication cryptographic;
                         password "pwd" {
                                 algorithm keyed md5;
@@ -51,7 +51,7 @@ protocol ospf v3 {
                 export all;
         };
         area 0.0.0.0 {
-                interface "eth0" {
+                interface "${BIRD_INTERFACE}" {
                         type pointopoint;
                 };
         };

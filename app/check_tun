@@ -1,0 +1,60 @@
+#!/bin/bash
+
+check_tun() {
+    local max_retries=30
+    local retry_count=0
+    
+    echo "Checking TUN interface..."
+    
+    while [ $retry_count -lt $max_retries ]; do
+        # 1. Check if sing-box process is running
+        if ! pgrep -f "sing-box.*run" >/dev/null; then
+            echo "❌ sing-box process is not running"
+            return 1
+        fi
+        
+        # 2. Check TUN device
+        local tun_device=""
+        for dev in tun0 sing-tun utun; do
+            if ip link show $dev &>/dev/null; then
+                tun_device=$dev
+                break
+            fi
+        done
+        
+        if [ -z "$tun_device" ]; then
+            retry_count=$((retry_count + 1))
+            echo "⏳ Waiting for TUN device ($tun_device)... ($retry_count/$max_retries)"
+            sleep 3
+            continue
+        fi
+        
+        # 3. Check if TUN device has IP address
+        if ! ip addr show "$tun_device" | grep -q 'inet'; then
+            retry_count=$((retry_count + 1))
+            echo "⏳ Waiting for TUN device to obtain IP address... ($retry_count/$max_retries)"
+            sleep 3
+            continue
+        fi
+        
+        # 4. Check if TUN device is UP
+        if ! ip link show "$tun_device" | grep -q 'UP'; then
+            retry_count=$((retry_count + 1))
+            echo "⏳ Waiting for TUN device to activate... ($retry_count/$max_retries)"
+            sleep 3
+            continue
+        fi
+        
+        echo "✅ sing-box is fully ready!"
+        echo "   - Process: $(pgrep -f 'sing-box.*run')"
+        echo "   - TUN device: $tun_device"
+        echo "   - IP address: $(ip addr show $tun_device | awk '/inet/ {print $2}'|sed -n 1p)"
+        return 0
+    done
+    
+    echo "❌ sing-box startup timeout (waited $((max_retries)) seconds)"
+    return 1
+}
+
+check_tun
+exit $?

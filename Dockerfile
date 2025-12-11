@@ -17,10 +17,14 @@ RUN set -ex \
         -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid= -checklinkname=0" \
         ./cmd/sing-box
 FROM --platform=$TARGETPLATFORM alpine AS dist
+ENV BIRD_INTERFACE=${BIRD_INTERFACE:-eth0}
+ENV BIRD_ROUTER_ID=${BIRD_ROUTER_ID:-10.10.0.1}
+ENV GH_PROXY=${GH_PROXY:-https://edgeone.gh-proxy.com}
+ENV GEO_PROXY=${GEO_PROXY:-https://cdn.jsdelivr.net}
 RUN set -ex \
     && apk update \
     && apk upgrade \
-    && apk add bash tzdata ca-certificates nftables curl bird supervisor jq git
+    && apk add bash tzdata ca-certificates nftables curl bird envsubst supervisor jq git
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 COPY entrypoint.sh /entrypoint.sh
 WORKDIR /app

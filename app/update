@@ -1,9 +1,7 @@
 #!/bin/sh
-GH_PROXY="https://edgeone.gh-proxy.com"
-GEO_PROXY="https://cdn.jsdelivr.net"
-#update static routes
-curl -Lo /app/bird/routes4.conf https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
-curl -Lo /app/bird/routes6.conf https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
+#update routes
+curl -Lo /app/bird/routes4.conf ${GH_PROXY}/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
+curl -Lo /app/bird/routes6.conf ${GH_PROXY}/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
 birdc configure
 #update geo files
 curl -Lo /app/sing-box/geoip.db ${GEO_PROXY}/gh/MetaCubeX/meta-rules-dat@release/geoip.db

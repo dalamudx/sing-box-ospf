@@ -5,6 +5,19 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2025-12-11]
+
+### 变更
+- 新增部分可配置环境变量GEO_PROXY、GH_PROXY、BIRD_INTERFACE、BIRD_ROUTER_ID
+- 新增bird依赖检测，修复bird启动过早但sing-box未就绪的问题
+
+### 修改
+- 新增 `app/tun_check.sh` 文件
+- 更新 `app/ui` 文件
+- 更新 `app/update` 文件
+- 更新 `app/bird/bird.conf` 文件，并重命名 `app/bird/bird.template` 作为bird配置模板
+
+
 ## [2025-07-17]
 
 ### 变更
