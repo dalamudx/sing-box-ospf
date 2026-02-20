@@ -15,16 +15,17 @@ check_tun() {
         
         # 2. Check TUN device
         local tun_device=""
-        for dev in tun0 sing-tun utun; do
-            if ip link show $dev &>/dev/null; then
-                tun_device=$dev
+        local target_devices="${TUN_DEVICE:-tun0 sing-tun utun}"
+        for dev in $target_devices; do
+            if ip link show "$dev" &>/dev/null; then
+                tun_device="$dev"
                 break
             fi
         done
         
         if [ -z "$tun_device" ]; then
             retry_count=$((retry_count + 1))
-            echo "⏳ Waiting for TUN device ($tun_device)... ($retry_count/$max_retries)"
+            echo "⏳ Waiting for TUN device ($target_devices)... ($retry_count/$max_retries)"
             sleep 3
             continue
         fi

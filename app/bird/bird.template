@@ -37,8 +37,8 @@ protocol ospf v2 {
         area 0.0.0.0 {
                 interface "${BIRD_INTERFACE}" {
 			authentication cryptographic;
-                        password "pwd" {
-                                algorithm keyed md5;
+                        password "${BIRD_PASSWD}" {
+                                algorithm hmac sha256;
                         };
                         type pointopoint;
                 };
@@ -52,6 +52,10 @@ protocol ospf v3 {
         };
         area 0.0.0.0 {
                 interface "${BIRD_INTERFACE}" {
+                        authentication cryptographic;
+                        password "${BIRD_PASSWD}" {
+                                algorithm hmac sha256;
+                        };
                         type pointopoint;
                 };
         };
