@@ -5,6 +5,16 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2026-02-20]
+
+### 变更
+- 新增可配置环境变量`BIRD_PASSWD`、`TUN_DEVICE`
+- 移除构建过程设置的环境变量默认值
+### 修改
+- 更新`app/bird/bird.template`文件
+- 更新`app/tun_check`文件
+
+
 ## [2025-12-11]
 
 ### 变更

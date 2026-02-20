@@ -99,7 +99,6 @@ docker run -d \
      - `BIRD_INTERFACE` - Bird OSPF 监听和广播网络路由的网卡接口。
      - `BIRD_ROUTER_ID` - OSPF Router ID，通常需修改为所在宿主机或物理网络的实际 IP 地址。
      - `BIRD_PASSWD` - OSPF v2/v3 的认证密码。
-     - `NEIGHBOR_ROUTER_ID` - OSPF 邻居 Router ID。
      - `TUN_DEVICE` - 显式指定 sing-box 的 TUN 网卡名称（如 `tun0`, `sing-tun`）。
    - **下载与更新代理设置**:
      - `GH_PROXY` - GitHub 镜像加速代理，用于路由表和 Web UI 拉取。
