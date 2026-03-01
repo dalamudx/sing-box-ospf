@@ -5,14 +5,30 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2026-03-01]
+
+### 变更
+- 新增可配置环境变量`ROUTERS4_URL`、`ROUTERS6_URL`
+- 这一版本开始(2026-03-01以后构建的镜像)，环境变量`GEO_PROXY`、`GH_PROXY`必须以 `/` 结尾，否则会下载失败，这样做是为了兼容不设置代理的情况
+- 优化 bird 启动逻辑，增加对 bird 配置文件的检测，没有提前准备路由文件的情况下，也能正常启动
+- 优化 `app/update` 文件，增加重试机制
+- 优化 `app/ui` 中的 `git` 操作，避免 Pull 失败
+- 统一脚本解释器为 `/bin/bash`
+### 修改
+- 更新 `/entrypoint.sh` 文件
+- 更新 `/app/update` 文件
+- 更新 `/app/ui` 文件
+- 更新 `/app/cron` 文件
+
+
 ## [2026-02-20]
 
 ### 变更
-- 新增可配置环境变量`BIRD_PASSWD`、`TUN_DEVICE`
+- 新增可配置环境变量 `BIRD_PASSWD`、`TUN_DEVICE`
 - 移除构建过程设置的环境变量默认值
 ### 修改
-- 更新`app/bird/bird.template`文件
-- 更新`app/tun_check`文件
+- 更新 `app/bird/bird.template` 文件
+- 更新 `app/tun_check` 文件
 
 
 ## [2025-12-11]

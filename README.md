@@ -77,14 +77,16 @@ docker run -d \
 .
 ├── app
 │   ├── bird
-│   │   ├── bird.conf     # bird配置文件
+│   │   ├── bird.template # bird配置文件模板
 │   │   ├── routes4.conf  # ipv4路由表
 │   │   └── routes6.conf  # ipv6路由表
+│   ├── check_tun         # 检查TUN设备是否存在
 │   ├── cron              # 定时任务
 │   ├── sing-box
 │   │   └── config.json   # sing-box配置文件
 │   ├── ui                # UI更新脚本
 │   └── update            # 路由、GEO文件、UI更新
+├── CHANGELOG.md
 ├── Dockerfile
 ├── entrypoint.sh
 ├── README.md
@@ -100,9 +102,11 @@ docker run -d \
      - `BIRD_ROUTER_ID` - OSPF Router ID，通常需修改为所在宿主机或物理网络的实际 IP 地址。
      - `BIRD_PASSWD` - OSPF v2/v3 的认证密码。
      - `TUN_DEVICE` - 显式指定 sing-box 的 TUN 网卡名称（如 `tun0`, `sing-tun`）。
+     - `ROUTERS4_URL` - ipv4路由表链接
+     - `ROUTERS6_URL` - ipv6路由表链接
    - **下载与更新代理设置**:
-     - `GH_PROXY` - GitHub 镜像加速代理，用于路由表和 Web UI 拉取。
-     - `GEO_PROXY` - Geo 数据库代理，用于加速下载 `geoip.db` 等规则集。
+     - `GH_PROXY` - GitHub 镜像加速代理，必须以`/`结尾，用于路由表和 Web UI 拉取。
+     - `GEO_PROXY` - Geo 数据库代理，必须以`/`结尾，用于加速下载 `geoip.db` 等规则集。
 
 2. **Bird 配置**:
    - 使用模板生成，核心参数可通过上述环境变量配置。
@@ -113,7 +117,7 @@ docker run -d \
    - 替换 `app/sing-box/config.json` 为你自己的配置文件。
 
 4. **Bird路由**:
-   - 修改 `app/update` 脚本中第2、3行下载链接为你要部署的静态路由表链接
+   - 路由表文件获取可以自行搜索，也可以参考项目[nchnroutes](https://github.com/dalamudx/nchnroutes)
 
 5. **部署方式**:
    - 将 `app` 目录挂载在容器的 `/app` 路径
@@ -135,7 +139,7 @@ docker run -d \
 
 - **路由表配置**:
   - 如需应用启动后立即广播路由，请提前准备 `routes4.conf` 和 `routes6.conf` 放到 `app/bird` 目录
-  - 或在容器启动后手动执行 `sh /app/update`
+  - 或在容器启动后手动执行 `bash /app/update`
 
 - **UI 更新机制**:
   - 更新 UI 功能通过删除本地目录并用 `git` 拉取最新版本实现
