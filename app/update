@@ -1,10 +1,35 @@
-#!/bin/sh
+#!/bin/bash
+
+retry() {
+    local n=1
+    local max=3
+    local delay=2
+    while true; do
+        "$@" && break || {
+            if [[ $n -lt $max ]]; then
+                ((n++))
+                echo "Download failed. Retrying in $delay seconds (attempt $n/$max): $@"
+                sleep $delay;
+            else
+                echo "Download failed after $max attempts: $@"
+                return 1
+            fi
+        }
+    done
+}
+
 #update routes
-curl -Lo /app/bird/routes4.conf ${GH_PROXY}/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes4.conf
-curl -Lo /app/bird/routes6.conf ${GH_PROXY}/https://github.com/dalamudx/nchnroutes/releases/download/latest/routes6.conf
-birdc configure
+retry curl -# -Lo /app/bird/routes4.conf ${GH_PROXY}${ROUTERS4_URL}
+retry curl -# -Lo /app/bird/routes6.conf ${GH_PROXY}${ROUTERS6_URL}
+
+if supervisorctl status bird | grep -q RUNNING; then
+    birdc configure
+else
+    echo "Notice: bird service is not running via supervisor, skipping bird config reload."
+fi
 #update geo files
-curl -Lo /app/sing-box/geoip.db ${GEO_PROXY}/gh/MetaCubeX/meta-rules-dat@release/geoip.db
-curl -Lo /app/sing-box/geosite.db ${GEO_PROXY}/gh/MetaCubeX/meta-rules-dat@release/geosite.db
+retry curl -# -Lo /app/sing-box/geoip.db ${GEO_PROXY}gh/MetaCubeX/meta-rules-dat@release/geoip.db
+retry curl -# -Lo /app/sing-box/geosite.db ${GEO_PROXY}gh/MetaCubeX/meta-rules-dat@release/geosite.db
+
 #update ui
-/bin/sh /app/ui
+/bin/bash /app/ui

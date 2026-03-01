@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 UI=$(jq -r '.experimental.clash_api.external_ui_download_url' /app/sing-box/config.json|grep -oE 'metacubexd|Yacd-meta|zashboard')
 UI_DIR=$(jq -r '.experimental.clash_api.external_ui' /app/sing-box/config.json)
 INSTALL_DIR=$(echo ${UI_DIR}|grep '^/' || echo /app/sing-box/${UI_DIR})
@@ -11,19 +11,20 @@ BRANCH="gh-pages"
 if [[ "${INSTALL_DIR}" != "null" || "${INSTALL_DIR}" != "/" ]]
 then
     #update ui
-    git -C ${INSTALL_DIR} pull --depth 1 -r
+    git -C ${INSTALL_DIR} fetch --depth 1 origin gh-pages
+    git -C ${INSTALL_DIR} reset --hard origin/gh-pages
     #replace ui
     if [ $? -ne 0 ]
     then
         if [[ "${UI}" == "Yacd-meta" || "${UI}" == "null" ]]
         then
-            git clone -b ${BRANCH} ${GH_PROXY}/${YACD_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}${YACD_LINK} ${TEMP_DIR} --depth 1
         elif [ "${UI}" == "metacubexd" ]
         then
-            git clone -b ${BRANCH} ${GH_PROXY}/${METACUBEX_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}${METACUBEX_LINK} ${TEMP_DIR} --depth 1
         elif [ "${UI}" == "zashboard" ]
         then
-            git clone -b ${BRANCH} ${GH_PROXY}/${ZASHBOURD_LINK} ${TEMP_DIR} --depth 1
+            git clone -b ${BRANCH} ${GH_PROXY}${ZASHBOURD_LINK} ${TEMP_DIR} --depth 1
         fi
         if [ $? -eq 0 ]
         then
