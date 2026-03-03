@@ -20,7 +20,8 @@ permissions:
 # 全局环境变量
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
-  SING_BOX_REPO: SagerNet/sing-box
+  SING_BOX_OWNER: SagerNet
+  SING_BOX_REPO: sing-box
 
 # 工作流任务
 jobs:
@@ -33,14 +34,15 @@ jobs:
     outputs:
       tag: ${{ steps.check-version.outputs.tag }}
       status: ${{ steps.check-version.outputs.status }}
-      options: ${{ steps.check-version.outputs.options }}
     steps:
       - name: 🔎 检查版本是否有效
         id: check-version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # 获取用户指定的标签
           TAG=v${{ github.event.inputs.tag }}
-          GIT_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases?per_page=100 | jq -r '.[] | .tag_name'|grep $TAG || echo "")
+          GIT_TAG=$(gh api graphql -F owner=${{ env.SING_BOX_OWNER }} -F name=${{ env.SING_BOX_REPO }} -F tagName="$TAG" -f query='query($owner: String!, $name: String!, $tagName: String!) { repository(owner: $owner, name: $name) { release(tagName: $tagName) { tagName } } }' --jq '.data.repository.release.tagName // empty')
 
           # 获取仓库名称（不含所有者）
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d '/' -f 2)
@@ -57,12 +59,9 @@ jobs:
           then
             if [ -z "${GHCR_TAG}" ]
             then
-              # 获取编译选项
-              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
               echo "✅ 版本有效，准备构建: ${GIT_TAG}"
               echo "tag=${GIT_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
-              echo "options=${options}" >> $GITHUB_OUTPUT
             else
               echo "⏭️ 标签 ${GIT_TAG} 已存在于 GitHub Container Registry 中"
               echo "status=fail" >> $GITHUB_OUTPUT
@@ -101,7 +100,7 @@ jobs:
       - name: 📥 检出 sing-box ${{ needs.check.outputs.tag }}
         uses: actions/checkout@v4
         with:
-          repository: ${{ env.SING_BOX_REPO }}
+          repository: ${{ env.SING_BOX_OWNER }}/${{ env.SING_BOX_REPO }}
           path: sing-box
           ref: ${{ needs.check.outputs.tag }}
           
@@ -144,7 +143,6 @@ jobs:
           context: ./sing-box
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
-            OPTIONS=${{ needs.check.outputs.options }}
           labels: |
             ${{ steps.meta.outputs.labels }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}

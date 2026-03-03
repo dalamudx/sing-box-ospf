@@ -17,7 +17,8 @@ permissions:
 # 全局环境变量
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
-  SING_BOX_REPO: SagerNet/sing-box
+  SING_BOX_OWNER: SagerNet
+  SING_BOX_REPO: sing-box
 
 # 工作流任务
 jobs:
@@ -31,18 +32,19 @@ jobs:
       tag: ${{ steps.check-update.outputs.tag }}
       status: ${{ steps.check-update.outputs.status }}
       channel: ${{ steps.check-update.outputs.channel }}
-      options: ${{ steps.check-update.outputs.options }}
     steps:
       - name: 🔎 检查 Sing-Box 版本
         id: check-update
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # 获取 skopeo
           sudo apt-get update && sudo apt-get install -y skopeo
           
           # 获取最新的稳定版和开发版标签
-          RELEASE_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == false) | .tag_name' | head -n 1 || echo "")
-          DEV_TAG=$(curl -s https://api.github.com/repos/${{ env.SING_BOX_REPO }}/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1 || echo "")
+          RELEASE_TAG=$(gh api graphql -F owner=${{ env.SING_BOX_OWNER }} -F name=${{ env.SING_BOX_REPO }} -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { tagName isPrerelease } } } }' --jq '[.data.repository.releases.nodes[] | select(.isPrerelease == false)][0].tagName' || echo "")
+          DEV_TAG=$(gh api graphql -F owner=${{ env.SING_BOX_OWNER }} -F name=${{ env.SING_BOX_REPO }} -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { tagName isPrerelease } } } }' --jq '[.data.repository.releases.nodes[] | select(.isPrerelease == true)][0].tagName' || echo "")
 
           # 获取仓库名称（不含所有者）
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d '/' -f 2)
@@ -70,22 +72,16 @@ jobs:
           then
             if [ -n "${GHCR_RELEASE_TAG}" ] && [ "${GHCR_RELEASE_TAG}" != "${RELEASE_TAG}" ]
             then
-              # 获取编译选项
-              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/main/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
               echo "✅ 需要构建稳定版: ${RELEASE_TAG}"
               echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=latest" >> $GITHUB_OUTPUT
-              echo "options=${options}" >> $GITHUB_OUTPUT
             elif [ -n "${GHCR_DEV_TAG}" ] && [ "${GHCR_DEV_TAG}" != "${DEV_TAG}" ]
             then
-              # 获取开发版编译选项
-              options=$(curl -sSL https://raw.githubusercontent.com/${{ env.SING_BOX_REPO }}/refs/heads/dev-next/Dockerfile|grep -A 1 tags|grep with|awk -F\" '{print $2}' || echo "with_quic,with_grpc,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_acme,with_clash_api")
               echo "✅ 需要构建开发版: ${DEV_TAG}"
               echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
               echo "status=success" >> $GITHUB_OUTPUT
               echo "channel=dev" >> $GITHUB_OUTPUT
-              echo "options=${options}" >> $GITHUB_OUTPUT
             elif [ -z "${GHCR_RELEASE_TAG}" ] || [ -z "${GHCR_DEV_TAG}" ]
             then
               # 获取仓库版本失败
@@ -129,11 +125,12 @@ jobs:
       - name: 📥 检出 sing-box ${{ needs.check.outputs.tag }}
         uses: actions/checkout@v4
         with:
-          repository: ${{ env.SING_BOX_REPO }}
+          repository: ${{ env.SING_BOX_OWNER }}/${{ env.SING_BOX_REPO }}
           path: sing-box
           ref: ${{ needs.check.outputs.tag }}
           
       - name: 🔧 准备构建环境
+        id: prepare-env
         shell: bash
         run: |
           platform=${{ matrix.platform }}
@@ -173,7 +170,6 @@ jobs:
           context: ./sing-box
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
-            OPTIONS=${{ needs.check.outputs.options }}
           labels: |
             ${{ steps.meta.outputs.labels }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
